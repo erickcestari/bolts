@@ -209,7 +209,14 @@ A writer:
     - MUST specify the most-preferred field first, followed by less-preferred fields, in order.
 
 A reader:
-  - MUST skip over `f` fields that use an unknown `version`.
+  - MUST validate all `f` fields:
+    - MUST skip over `f` fields that use an unknown `version`.
+    - For known `version` values, MUST validate according to Bitcoin address standards:
+      - If `version` is 0: MUST conform to BIP-0141 SegWit v0 validation rules
+      - If `version` is 1: MUST conform to BIP-0341 Taproot validation rules
+      - If `version` is 17: MUST conform to Base58Check encoding with valid P2PKH format
+      - If `version` is 18: MUST conform to Base58Check encoding with valid BIP-0013 P2SH format
+    - MUST fail the payment if any known-version `f` field violates its respective BIP specification.
   - MUST fail the payment if any mandatory field (`p`, `h`, `s`, `n`) does not have the correct length (52, 52, 52, 53).
   - MUST fail the payment if neither a `d` field nor a `h` field is present, or if both are present.
   - if the `9` field contains unknown _odd_ bits that are non-zero:
@@ -607,6 +614,33 @@ Breakdown:
   * `6c6e626332306d0b25fe64500d044444444444444444444444444444444444444444444444444444444444444442e1a1c92db7b3f161a001b7689049eea2701b46f8db7513629edf2408fac7eaedc608043400010203040506070809000102030405060708090001020304050607080901020486a01863143c14c5166804bd19203356da136c985678cd4d27a1b8c63296049032620280704000` hex of data for signing (prefix + data after separator up to the start of the signature)
   * `865a2cc6730e1eeeacd30e6da8e9ab0e9115828d27953ec0c0f985db05da5027` hex of SHA256 of the preimage
 
+> ### On mainnet, with fallback (P2WPKH) address bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4 and fallback (P2WSH) address bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3
+> lnbc20m1pvjluezsp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygshp58yjmdan79s6qqdhdzgynm4zwqd5d7xmw5fk98klysy043l2ahrqspp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqfppqw508d6qejxtdg4y5r3zarvary0c5xw7kfp4qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q9qrsgq3aycy5gecthdw9l7zs6yqdlxcw9fm48xvtswg2mcmeam40zf3j449j9g7a48wzdhe4sfn99fxf62862rdqxs0aqweujcx5l93g2uutgp7x98v8
+
+* `lnbc`: prefix, Lightning on Bitcoin mainnet
+* `20m`: amount (20 milli-bitcoin)
+* `1`: Bech32 separator
+* `pvjluez`: timestamp (1496314658)
+* `s`: payment secret...
+* `h`: tagged field: hash of description...
+* `p`: payment hash...
+* `f`: tagged field: fallback address
+  * `pp`: `data_length` (`p` = 1; 1 * 32 + 1 == 33)
+  * `q`: 0, so witness version 0
+  * `w508d6qejxtdg4y5r3zarvary0c5xw7k`: 160 bits = P2WPKH.
+* `f`: tagged field: fallback address
+  * `p4`: `data_length` (`p` = 1, `4` = 21; 1 * 32 + 21 == 53)
+  * `q`: 0, so witness version 0
+  * `rp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q`: 260 bits = P2WSH.
+* `9`: features...
+* `3aycy5gecthdw9l7zs6yqdlxcw9fm48xvtswg2mcmeam40zf3j449j9g7a48wzdhe4sfn99fxf62862rdqxs0aqweujcx5l93g2uutgp`: signature
+* `7x98v8`: Bech32 checksum
+* Signature breakdown:
+  * `8f49825119c2eed717fe14344037e6c38a9dd4e662e0e42b78de7bbabc498cab52c8a8f76a7709b7cd609994a93274a3e943680d07f40ecf258353e58a15ce2d` hex of signature data (32-byte r, 32-byte s)
+  * `1` (int) recovery flag contained in `signature`
+  * `6c6e626332306d0b25fe64500d044444444444444444444444444444444444444444444444444444444444444442e1a1c92db7b3f161a001b7689049eea2701b46f8db7513629edf2408fac7eaedc60804340001020304050607080900010203040506070809000102030405060708090102048420751e76e8199196d454941c45d1b3a323f1433bd6486a01863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262028070400` hex of data for signing (prefix + data after separator up to the start of the signature)
+  * `9c91ceab90801eb25cca5adf53ee65dc6bcac36349e5d0d62e9ed13387e01606` hex of SHA256 of the preimage
+
 > ### Please send 0.00967878534 BTC for a list of items within one week, amount in pico-BTC
 > lnbc9678785340p1pwmna7lpp5gc3xfm08u9qy06djf8dfflhugl6p7lgza6dsjxq454gxhj9t7a0sd8dgfkx7cmtwd68yetpd5s9xar0wfjn5gpc8qhrsdfq24f5ggrxdaezqsnvda3kkum5wfjkzmfqf3jkgem9wgsyuctwdus9xgrcyqcjcgpzgfskx6eqf9hzqnteypzxz7fzypfhg6trddjhygrcyqezcgpzfysywmm5ypxxjemgw3hxjmn8yptk7untd9hxwg3q2d6xjcmtv4ezq7pqxgsxzmnyyqcjqmt0wfjjq6t5v4khxsp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsxqyjw5qcqp2rzjq0gxwkzc8w6323m55m4jyxcjwmy7stt9hwkwe2qxmy8zpsgg7jcuwz87fcqqeuqqqyqqqqlgqqqqn3qq9q9qrsgqrvgkpnmps664wgkp43l22qsgdw4ve24aca4nymnxddlnp8vh9v2sdxlu5ywdxefsfvm0fq3sesf08uf6q9a2ke0hc9j6z6wlxg5z5kqpu2v9wz
 
@@ -792,6 +826,9 @@ Breakdown:
 
 > ### Missing required `s` field.
 > lnbc20m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqhp58yjmdan79s6qqdhdzgynm4zwqd5d7xmw5fk98klysy043l2ahrqs9qrsgq7ea976txfraylvgzuxs8kgcw23ezlrszfnh8r6qtfpr6cxga50aj6txm9rxrydzd06dfeawfk6swupvz4erwnyutnjq7x39ymw6j38gp49qdkj
+
+> ### Multiple fallback addresses with invalid SegWit v0 program length (41 bytes).
+> lnbc1230p1qqp9458np4q0n326hr8v9zprg8gsvezcch06gfaqqhde2aj730yg0durunfhv66xqyp4p3cqzysfpp3qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfzrqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhp5qvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpspp5z52329g4z52329g4z52329g4z52329g4z52329g4z52329g4z52ssp59g4z52329g4z52329g4z52329g4z52329g4z52329g4z52329g4q9qrsgqs3xz9pgcha32fs3q7a06xl0nvy7yctlultmgjp4d5d0xcvrc3ftjpx4ulh5u0dxdc6d84gjly9wgv5wtarlpe9mlq03p6f7tcczxnqcpqm3jq8
 
 # Authors
 
