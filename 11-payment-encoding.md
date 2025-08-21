@@ -221,6 +221,10 @@ A reader:
   description.
   - if a valid `n` field is provided:
     - MUST use the `n` field to validate the signature instead of performing signature recovery.
+    - the signature MUST be normalized lower-S form.
+  - otherwise:
+    - MUST perform signature recovery.
+    - signature recovery accepts both high-S and low-S signatures.
   - if a valid `s` field is not provided:
     - MUST fail the payment.
   - otherwise:
