@@ -1691,6 +1691,7 @@ The writer:
 The reader:
 
 - SHOULD accept onion messages from peers without an established channel.
+- MUST NOT allow onion message processing to degrade the processing of any other Lightning messages.
 - MAY rate-limit messages by dropping them.
 - MUST decrypt `onion_message_packet` using an empty `associated_data`, and `path_key`, as described in [Onion Decryption](04-onion-routing.md#onion-decryption) to extract an `onionmsg_tlv`.
 - If decryption fails, the result is not a valid `onionmsg_tlv`, or it contains unknown even types:
@@ -1758,6 +1759,25 @@ like an HTLC onion, or if larger, be a fixed size.
 Onion messages don't explicitly require a channel, but for
 spam-reduction a node may choose to ratelimit such peers, especially
 messages it is asked to forward.
+
+Onion messages are unreliable by design and carry no protocol-level
+delivery guarantees. All other Lightning messages — HTLC operations,
+commitment signatures, channel management, pings — have stronger
+delivery expectations or direct consequences if delayed (e.g. a missed
+ping causes connection closure, a delayed commitment signature can result in
+HTLCs timing out and ultimately force-closing a channel). An attacker could
+exploit shared queuing or processing resources by flooding a peer with onion
+messages, starving critical protocol messages between two nodes. The requirement
+that onion message processing must not degrade the processing of any other
+messages ensures this class of denial-of-service is not possible in compliant
+implementations.
+
+Additionally, an attacker can construct circular blinded routes that
+cause a single onion message to be forwarded repeatedly between two
+nodes, amplifying resource consumption far beyond what the attacker
+expends. This further motivates both the rate-limiting recommendation
+and the requirement that onion message processing must not degrade
+other protocol operations.
 
 ## `max_htlc_cltv` Selection
 
