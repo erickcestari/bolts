@@ -1703,7 +1703,10 @@ The writer:
 
 The reader:
 
-- SHOULD accept onion messages from peers without an established channel.
+- if `option_onion_messages_channel_only` has been negotiated with the sending peer:
+  - MUST NOT accept onion messages from that peer unless an established channel exists.
+- otherwise:
+  - MUST accept onion messages from that peer even without an established channel.
 - MAY rate-limit messages by dropping them.
 - MUST decrypt `onion_message_packet` using an empty `associated_data`, and `path_key`, as described in [Onion Decryption](04-onion-routing.md#onion-decryption) to extract an `onionmsg_tlv`.
 - If decryption fails, the result is not a valid `onionmsg_tlv`, or it contains unknown even types:
@@ -1744,6 +1747,13 @@ The reader:
 
 
 #### Rationale
+
+`option_onion_messages` means the node accepts onion messages from any connected peer.
+`option_onion_messages_channel_only` is a modifier that restricts this: when negotiated
+on top of `option_onion_messages`, the node only forwards to and from peers with an
+established channel.  Senders that need to relay through a node without a channel MUST
+only select nodes that advertise `option_onion_messages` without
+`option_onion_messages_channel_only`.
 
 Care must be taken that replies are only accepted using the exact
 reply_path given, otherwise probing is possible.  That means checking
